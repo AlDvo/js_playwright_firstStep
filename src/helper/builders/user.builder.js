@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 
-//класс билдер, для созжания тестовых сущностей
+//класс билдер, для создания тестовых сущностей
 //с разным набором параметров, набор параметров задается за счет функций
 
 export class UserBuilder {
@@ -19,12 +19,30 @@ export class UserBuilder {
         return this;
     }
 
+    addNotValidPassword() {
+        this.userNotValidPassword = faker.internet.password(3);
+        return this;
+    }
+
+    addUrl() {
+        this.userUrl = faker.internet.url();
+        return this;
+    }
+
+    addBio(num = 20) {
+        this.userBio = faker.word.words(num);
+        return this;
+    }
+
     generate() {
         const copied = structuredClone(
             {
                 userName: this.userName,
                 userEmail: this.userEmail,
-                userPassword: this.userPassword
+                userPassword: this.userPassword,
+                userNotValidPassword: this.userNotValidPassword,
+                userUrl: this.userUrl,
+                userBio: this.userBio,
             }
 
         );

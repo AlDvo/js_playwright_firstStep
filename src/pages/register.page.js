@@ -28,4 +28,8 @@ export class RegisterPage extends BasePage {
     async clickSignUpButton() {
         await this.signUpButton.click();
     }
+
+    async clickSignToYourAccButton() {
+        await this.signToYourAccButton.click();
+    }
 }
