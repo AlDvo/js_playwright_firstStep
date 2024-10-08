@@ -43,7 +43,6 @@ test.describe('Page Object ', () => {
         await app.createArticlePage.clickSubmitButton();
 
         await expect(page.getByRole('heading', { name: article.title })).toBeVisible();
-        await app.mainPage.goToMainPage();
     });
 
     test('Проверка данных пользователя', async ({ page }) => {
@@ -53,8 +52,6 @@ test.describe('Page Object ', () => {
         await app.settinsgPage.nameField.click();
         await expect(app.settinsgPage.nameField).toHaveText(user.userName);
         await expect(app.settinsgPage.emailField).toHaveText(user.userEmail);
-
-        await app.mainPage.goToMainPage();
     });
 
     test('Добавление данных на странице settings', async ({ page }) => {
@@ -64,7 +61,6 @@ test.describe('Page Object ', () => {
         await app.settinsgPage.clickUpdateSettingsButton();
 
         await expect(app.settinsgPage.updateButton).toBeEmpty();
-        await app.mainPage.goToMainPage();
     });
 
     test('Добавление комментария к новой публикации', async ({ page }) => {
