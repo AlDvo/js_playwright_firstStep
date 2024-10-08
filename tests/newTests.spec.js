@@ -1,101 +1,102 @@
 import { test, expect } from '@playwright/test';
-import { faker } from '@faker-js/faker';
-import { BasePage, MainPage, LoginPage, RegisterPage } from '../src/pages/index';
+import { UserBuilder, ArticleBuilder } from '../src/helper/index';
+import { App } from '../src/pages/index';
 
 const URL = "https://realworld.qa.guru/#/"
 let user;
+let app;
+let article;
+
 
 test.describe('Page Object ', () => {
     test.beforeEach(async ({ page }) => {
 
-        user = {
-            userName: faker.person.firstName(),
-            userEmail: faker.internet.email(),
-            userPassword: faker.internet.password()
-        };
-        
-        const mainPage = new MainPage(page);
-        const registerPage = new RegisterPage(page);
+        user = new UserBuilder()
+            .addName()
+            .addEmail()
+            .addPassword()
+            .addUrl()
+            .addBio()
+            .generate();
 
-        await mainPage.open(URL);
-        await mainPage.goToRegister();
+        app = new App(page);
 
-        await registerPage.fillFieldNewUserData(user.userName, user.userEmail, user.userPassword);
-        await registerPage.clickSignUpButton();
-        await mainPage.homeButton.click();
+        await app.mainPage.open(URL);
+        await app.mainPage.goToRegister();
+
+        await app.registerPage.fillFieldNewUserData(user.userName, user.userEmail, user.userPassword);
+        await app.registerPage.clickSignUpButton();
+        await app.mainPage.homeButton.click();
     });
 
-        test('Выход пользователя из системы', async ({ page }) => {
-            const mainPage = new MainPage(page);
-            const registerPage = new RegisterPage(page);
+    test('Проверка создания новой публикации', async ({ page }) => {
+        
+        article = new ArticleBuilder()
+                .addTitle()
+                .addDescription()
+                .addBody()
+                .addTags()
+                .generate();
 
-            await mainPage.settingsButton.click();
-            await mainPage.logoutButton.click();
+        await app.mainPage.goToNewArticlePage();
+        await app.createArticlePage.fillFieldsOnNewArticlePage(article.title, article.description, article.body, article.tags);
+        await app.createArticlePage.clickSubmitButton();
 
-            await expect(mainPage.signUpButton).toBeVisible();
-        });
+        await expect(page.getByRole('heading', { name: article.title })).toBeVisible();
+    });
 
+    test('Проверка данных пользователя', async ({ page }) => {
+
+        await app.mainPage.goToSettingsPage();
+
+        await app.settinsgPage.nameField.click();
+        await expect(app.settinsgPage.nameField).toHaveText(user.userName);
+        await expect(app.settinsgPage.emailField).toHaveText(user.userEmail);
+    });
+
+    test('Добавление данных на странице settings', async ({ page }) => {
+
+        await app.mainPage.goToSettingsPage();
+        await app.settinsgPage.fillNotMandatoryFieldUserData(user.userUrl, user.userBio);
+        await app.settinsgPage.clickUpdateSettingsButton();
+
+        await expect(app.settinsgPage.updateButton).toBeEmpty();
+    });
+
+    test('Добавление комментария к новой публикации', async ({ page }) => {
+        
+        article = new ArticleBuilder()
+                .addTitle()
+                .addDescription()
+                .addBody()
+                .addTags()
+                .generate();
+
+        await app.mainPage.goToNewArticlePage();
+        await app.createArticlePage.fillFieldsOnNewArticlePage(article.title, article.description, article.body, article.tags);
+        await app.createArticlePage.clickSubmitButton();
+
+        await expect(page.getByRole('heading', { name: article.title })).toBeVisible();
+
+        await app.articleDetailsPage.fillComment(article.description);
+        await expect(locator('div').filter({ hasText: article.description })).toBeVisible();
+    });
 });
 
 test('Проверка ошибки авторизации', async ({ page }) => {
-    const mainPage = new MainPage(page);
-    const loginPage = new LoginPage(page);
+    
+    app = new App(page);
+    user = new UserBuilder()
+            .addEmail()
+            .addNotValidPassword()
+            .generate();
 
-    await mainPage.open(URL);
-    await mainPage.goToLogin();
+    await app.mainPage.open(URL);
+    await app.mainPage.goToRegister();
+    await expect(app.registerPage.headName).toHaveText("Sign up");
 
-    await expect(loginPage.headName).toHaveText("Sign in");
+    await app.loginPage.fillFieldOnLoginPage("@notValid@notValid.net", 'NotValidPassword');
+    await app.loginPage.clickLoginButton();
 
-    await loginPage.fillFieldOnLoginPage("@notValid@notValid.net", 'NotValidPassword');
-    await loginPage.loginButton.click();
-
-    await expect(loginPage.errorMessage).toHaveText("Email not found sign in first");
-});
-
-test('Проверка перехода Sign in -> Sign up', async ({ page }) => {
-    const mainPage = new MainPage(page);
-    const loginPage = new LoginPage(page);
-    const registerPage = new RegisterPage(page);
-
-    await mainPage.open(URL);
-    await mainPage.goToLogin();
-
-    await expect(loginPage.headName).toHaveText("Sign in");
-
-    await loginPage.needAccButton.click();
-    await expect(registerPage.headName).toHaveText("Sign up");
-});
-
-test('Проверка перехода Sign up -> Sign in', async ({ page }) => {
-    const mainPage = new MainPage(page);
-    const loginPage = new LoginPage(page);
-    const registerPage = new RegisterPage(page);
-
-    await mainPage.open(URL);
-    await mainPage.goToRegister();
-
-    await expect(registerPage.headName).toHaveText("Sign up");
-
-    await registerPage.signToYourAccButton.click();
-
-    await expect(loginPage.headName).toHaveText("Sign in");
-});
-
-test('Проверка перехода на главную страницу', async ({ page }) => {
-    const mainPage = new MainPage(page);
-    const loginPage = new LoginPage(page);
-    const registerPage = new RegisterPage(page);
-
-    await mainPage.open(URL);
-    await mainPage.goToRegister();
-    await expect(registerPage.headName).toHaveText("Sign up");
-
-    await mainPage.goToMainPage();
-    await expect(mainPage.mainLogo).toHaveText("conduit");
-
-    await mainPage.goToLogin();
-    await expect(loginPage.headName).toHaveText("Sign in");
-
-    await mainPage.goToMainPage();
-    await expect(mainPage.mainLogo).toHaveText("conduit");
+    await expect(app.loginPage.errorMessage).toHaveText("Email not found sign in first");
 });
